@@ -127,3 +127,9 @@ dmypy.json
 
 # Pyre type checker
 .pyre/
+
+
+# Data files
+data/raw/
+data/staging/
+data/cleaned/
