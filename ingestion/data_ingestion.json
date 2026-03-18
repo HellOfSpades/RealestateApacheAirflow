@@ -1,0 +1,126 @@
+{
+  "type": "index_parallel",
+  "spec": {
+    "ioConfig": {
+      "type": "index_parallel",
+      "inputSource": {
+        "type": "local",
+        "filter": "real_estate_flattened.csv",
+        "baseDir": "/Users/druid"
+      },
+      "inputFormat": {
+        "type": "csv",
+        "findColumnsFromHeader": true
+      }
+    },
+    "tuningConfig": {
+      "type": "index_parallel",
+      "partitionsSpec": {
+        "type": "dynamic"
+      }
+    },
+    "dataSchema": {
+      "dataSource": "real_estate_flattened",
+      "timestampSpec": {
+        "column": "full_date",
+        "format": "auto"
+      },
+      "dimensionsSpec": {
+        "dimensions": [
+          {
+            "type": "long",
+            "name": "transaction_id"
+          },
+          {
+            "type": "long",
+            "name": "serial_number"
+          },
+          {
+            "type": "double",
+            "name": "assessed_value"
+          },
+          {
+            "type": "double",
+            "name": "sales_amount"
+          },
+          {
+            "type": "double",
+            "name": "sales_ratio"
+          },
+          {
+            "type": "long",
+            "name": "address_id"
+          },
+          {
+            "type": "long",
+            "name": "property_type_id"
+          },
+          {
+            "type": "long",
+            "name": "date_recorded_id"
+          },
+          "property type",
+          "address",
+          {
+            "type": "long",
+            "name": "town_id"
+          },
+          {
+            "type": "double",
+            "name": "longitude"
+          },
+          {
+            "type": "double",
+            "name": "latitude"
+          },
+          "town",
+          {
+            "type": "double",
+            "name": "month"
+          },
+          {
+            "type": "double",
+            "name": "day"
+          },
+          {
+            "type": "double",
+            "name": "quarter"
+          },
+          {
+            "type": "long",
+            "name": "year"
+          },
+          {
+            "name": "rate_x",
+            "type": "double"
+          },
+          {
+            "name": "lower_bound",
+            "type": "double"
+          },
+          {
+            "name": "upper_bound",
+            "type": "double"
+          },
+          {
+            "name": "census_units",
+            "type": "long"
+          },
+          {
+            "name": "total_assisted_units",
+            "type": "long"
+          },
+          {
+            "name": "rate_y",
+            "type": "double"
+          }
+        ]
+      },
+      "granularitySpec": {
+        "queryGranularity": "none",
+        "rollup": false,
+        "segmentGranularity": "all"
+      }
+    }
+  }
+}
