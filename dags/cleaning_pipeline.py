@@ -6,7 +6,7 @@ from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
 
 
 @dag(
-    dag_id="process_employees",
+    dag_id="process_real_estate_data",
     schedule="0 0 * * *",
     start_date=pendulum.datetime(2021, 1, 1, tz="UTC"),
     catchup=False,
@@ -41,3 +41,5 @@ def process_real_estate_data():
 
     main_df.to_csv(BASE_DIR / "data/cleaned/Real_Estate_Sales.csv", index=False)
     ref_df.to_csv(BASE_DIR / "data/cleaned/Address.csv", index=False)
+
+process_real_estate_data_dag = process_real_estate_data()
