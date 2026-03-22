@@ -2,8 +2,6 @@ import datetime
 
 import pendulum
 from airflow.sdk import dag, task
-from airflow.providers.common.sql.operators.sql import SQLExecuteQueryOperator
-
 
 @dag(
     dag_id="process_real_estate_data",
@@ -20,7 +18,7 @@ def process_real_estate_data():
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
-    ref_path = BASE_DIR / "data/cleaned/Address.csv"
+    ref_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
 
     main_df = pd.read_csv(main_path, dtype=str)
 
@@ -40,6 +38,5 @@ def process_real_estate_data():
     )
 
     main_df.to_csv(BASE_DIR / "data/cleaned/Real_Estate_Sales.csv", index=False)
-    ref_df.to_csv(BASE_DIR / "data/cleaned/Address.csv", index=False)
 
 process_real_estate_data_dag = process_real_estate_data()
