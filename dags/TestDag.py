@@ -9,8 +9,9 @@ from pendulum import datetime
      catchup=False
      )
 def test_dag():
-    print("good")
-    pass
+    @task
+    def task1():
+        return "Task Return Value"
 
 
 test_dag()
