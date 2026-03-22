@@ -13,5 +13,6 @@ def test_dag():
     def task1():
         return "Task Return Value"
 
+    task1()
 
 test_dag()
