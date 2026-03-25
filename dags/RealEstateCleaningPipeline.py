@@ -75,24 +75,24 @@ def clean_real_estate_pipeline():
     main_df = load_csv(str(main_path))
 
     # Date Recorded branch
-    date_df = remove_empty_entries(main_df, column_name="Date Recorded")
-    date_df = correct_wrong_years(date_df, date_column_name="Date Recorded")
-    date_df = fix_date(date_df, date_column_name="Date Recorded")
+    main_df = remove_empty_entries(main_df, column_name="Date Recorded")
+    main_df = correct_wrong_years(main_df, date_column_name="Date Recorded")
+    main_df = fix_date(main_df, date_column_name="Date Recorded")
 
     # List Year branch
-    list_df = year_to_jan_first(main_df, "List Year")
-    list_df = rename_column(list_df, "List Year", "List Date")
+    main_df = year_to_jan_first(main_df, "List Year")
+    main_df = rename_column(main_df, "List Year", "List Date")
 
     main_df = remove_column(main_df, "Non Use Code")
     main_df = remove_column(main_df, "Assessor Remarks")
     main_df = remove_column(main_df, "OPM remarks")
 
     # Merge cleaned columns back
-    merged_df = merge_columns(main_df, date_df, ["Date Recorded"], ["Date Recorded"])
-    merged_df = merge_columns(merged_df, list_df, ["List Year"], ["List Date"])
+    # merged_df = merge_columns(main_df, date_df, ["Date Recorded"], ["Date Recorded"])
+    # merged_df = merge_columns(merged_df, list_df, ["List Year"], ["List Date"])
 
 
-    write_to_csv(merged_df, str(output_path))
+    write_to_csv(main_df, str(output_path))
 
 
 clean_real_estate_pipeline()
