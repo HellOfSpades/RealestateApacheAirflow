@@ -87,7 +87,7 @@ def clean_real_estate_pipeline():
     list_df = rename_column(list_df, "List Year", "List Date")
 
     # Merge cleaned columns back
-    merged_df = merge_columns(main_df, date_df, ["Date Recorded"])
+    merged_df = merge_columns(main_df, date_df, ["Date Recorded"], ["Date Recorded"])
     merged_df = merge_columns(merged_df, list_df, ["List Year"], ["List Date"])
 
 
