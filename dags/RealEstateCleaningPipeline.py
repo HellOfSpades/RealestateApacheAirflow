@@ -30,6 +30,20 @@ def clean_real_estate_pipeline():
         ).dt.strftime("%Y-%m-%d")
         return df
 
+    @task
+    def remove_empty_entries(df, column_name):
+        df = df[df[column_name].notna() & (df[column_name] != "")]
+        return df
+
+    # fix dates where the year is 0023 or 0024 to be 2023 and 2025
+    @task
+    def correct_wrong_years(df, date_column_name):
+        mask = df[date_column_name].str[6:8] == "00"
+        df.loc[mask, date_column_name] = (
+                df.loc[mask, date_column_name].str[:6] + "2" + df.loc[mask, date_column_name].str[7:]
+        )
+        return df
+
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -38,6 +52,9 @@ def clean_real_estate_pipeline():
 
     main_df = load_csv(str(main_path))
 
+    main_df = remove_empty_entries(main_df, column_name="Date Recorded")
+
+    main_df = correct_wrong_years(main_df, date_column_name="Date Recorded")
 
     main_df = fix_date(main_df, date_column_name="Date Recorded")
 
