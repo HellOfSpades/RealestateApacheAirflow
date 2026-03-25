@@ -36,13 +36,13 @@ def clean_real_estate_pipeline():
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
 
-    main_df = load_csv(main_path)
+    main_df = load_csv(str(main_path))
 
 
     main_df = fix_date(main_df, date_column_name="Date Recorded")
 
 
-    write_to_csv(main_df, output_path)
+    write_to_csv(main_df, str(output_path))
 
 
 clean_real_estate_pipeline()
