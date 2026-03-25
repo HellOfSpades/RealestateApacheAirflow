@@ -55,6 +55,11 @@ def clean_real_estate_pipeline():
         df = df.rename(columns={old_column_name: new_column_name})
         return df
 
+    @task
+    def merge_columns(df_main, df_cleaned, original_cols, cleaned_cols):
+        for orig_col, clean_col in zip(original_cols, cleaned_cols):
+            df_main[orig_col] = df_cleaned[clean_col]
+        return df_main
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -63,14 +68,27 @@ def clean_real_estate_pipeline():
 
     main_df = load_csv(str(main_path))
 
-    #fix Date Recorded
-    main_df = remove_empty_entries(main_df, column_name="Date Recorded")
-    main_df = correct_wrong_years(main_df, date_column_name="Date Recorded")
-    main_df = fix_date(main_df, date_column_name="Date Recorded")
+    # #fix Date Recorded
+    # main_df = remove_empty_entries(main_df, column_name="Date Recorded")
+    # main_df = correct_wrong_years(main_df, date_column_name="Date Recorded")
+    # main_df = fix_date(main_df, date_column_name="Date Recorded")
+    #
+    # #fix List Year
+    # main_df = year_to_jan_first(main_df, "List Year")
+    # main_df = rename_column(main_df, "List Year", "List Date")
 
-    #fix List Year
-    main_df = year_to_jan_first(main_df, "List Year")
-    main_df = rename_column(main_df, "List Year", "List Date")
+    # Date Recorded branch
+    date_df = remove_empty_entries(main_df, column_name="Date Recorded")
+    date_df = correct_wrong_years(date_df, date_column_name="Date Recorded")
+    date_df = fix_date(date_df, date_column_name="Date Recorded")
+
+    # List Year branch
+    list_df = year_to_jan_first(main_df, "List Year")
+    list_df = rename_column(list_df, "List Year", "List Date")
+
+    # Merge cleaned columns back
+    merged_df = merge_columns(main_df, date_df, ["Date Recorded"])
+    merged_df = merge_columns(merged_df, list_df, ["List Year"], ["List Date"])
 
 
     write_to_csv(main_df, str(output_path))
