@@ -44,6 +44,17 @@ def clean_real_estate_pipeline():
         )
         return df
 
+    @task
+    def year_to_jan_first(df, year_column_name):
+        df[year_column_name] = pd.to_datetime(df[year_column_name].astype(str) + "-01-01", format="%Y-%m-%d")
+        df[year_column_name] = df[year_column_name].dt.strftime("%Y-%m-%d")
+        return df
+
+    @task
+    def rename_column(df, old_column_name, new_column_name):
+        df = df.rename(columns={old_column_name: new_column_name})
+        return df
+
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -52,11 +63,14 @@ def clean_real_estate_pipeline():
 
     main_df = load_csv(str(main_path))
 
+    #fix Date Recorded
     main_df = remove_empty_entries(main_df, column_name="Date Recorded")
-
     main_df = correct_wrong_years(main_df, date_column_name="Date Recorded")
-
     main_df = fix_date(main_df, date_column_name="Date Recorded")
+
+    #fix List Year
+    main_df = year_to_jan_first(main_df, "List Year")
+    main_df = rename_column(main_df, "List Year", "List Date")
 
 
     write_to_csv(main_df, str(output_path))
