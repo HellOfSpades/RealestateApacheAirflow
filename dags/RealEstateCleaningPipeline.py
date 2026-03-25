@@ -91,7 +91,7 @@ def clean_real_estate_pipeline():
     merged_df = merge_columns(merged_df, list_df, ["List Year"], ["List Date"])
 
 
-    write_to_csv(main_df, str(output_path))
+    write_to_csv(merged_df, str(output_path))
 
 
 clean_real_estate_pipeline()
