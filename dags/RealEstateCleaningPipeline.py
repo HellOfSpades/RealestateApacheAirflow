@@ -67,6 +67,12 @@ def clean_real_estate_pipeline():
             df = df.drop(columns=[column_name])
         return df
 
+    @task
+    def update_property_type(df, property_col="Property Type", residential_col="Residential Type"):
+        mask = df[property_col] == "Residential"
+        df.loc[mask, property_col] = df.loc[mask, residential_col]
+        return df
+
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
@@ -83,9 +89,14 @@ def clean_real_estate_pipeline():
     main_df = year_to_jan_first(main_df, "List Year")
     main_df = rename_column(main_df, "List Year", "List Date")
 
+    #remove unneeded columns
     main_df = remove_column(main_df, "Non Use Code")
     main_df = remove_column(main_df, "Assessor Remarks")
     main_df = remove_column(main_df, "OPM remarks")
+
+    #Fix Property Type and Residential Type
+    main_df = update_property_type(main_df, "Property Type", "Residential Type")
+    main_df = remove_column(main_df, "Residential Type")
 
     # Merge cleaned columns back
     # merged_df = merge_columns(main_df, date_df, ["Date Recorded"], ["Date Recorded"])
