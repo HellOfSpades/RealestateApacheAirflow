@@ -73,12 +73,43 @@ def clean_real_estate_pipeline():
         df.loc[mask, property_col] = df.loc[mask, residential_col]
         return df
 
+    @task
+    def fill_missing_location(df,
+                              location_col="Location",
+                              town_col="Town",
+                              address_col="Address"):
+        # Step 1: create lookup of valid locations
+        lookup = (
+            df[df[location_col].notna() & (df[location_col] != "")]
+            [[town_col, address_col, location_col]]
+            .drop_duplicates(subset=[town_col, address_col], keep="first")
+            .rename(columns={location_col: "Location_lookup"})
+        )
+
+        # Step 2: merge back
+        df = df.merge(
+            lookup,
+            on=[town_col, address_col],
+            how="left"
+        )
+
+        # Step 3: fill missing Location values
+        mask = df[location_col].isna() | (df[location_col] == "")
+        df.loc[mask, location_col] = df.loc[mask, "Location_lookup"]
+
+        # Step 4: cleanup
+        df = df.drop(columns=["Location_lookup"])
+
+        return df
+
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
 
     main_df = load_csv(str(main_path))
+
+    main_df = fill_missing_location(main_df)
 
     # Date Recorded branch
     main_df = remove_empty_entries(main_df, column_name="Date Recorded")
@@ -101,6 +132,7 @@ def clean_real_estate_pipeline():
     # Merge cleaned columns back
     # merged_df = merge_columns(main_df, date_df, ["Date Recorded"], ["Date Recorded"])
     # merged_df = merge_columns(merged_df, list_df, ["List Year"], ["List Date"])
+
 
 
     write_to_csv(main_df, str(output_path))
