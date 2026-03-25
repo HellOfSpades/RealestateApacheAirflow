@@ -28,11 +28,10 @@ def clean_real_estate_pipeline():
             df[date_column_name],
             format="%m/%d/%Y"
         ).dt.strftime("%Y-%m-%d")
-
         return df
 
 
-    BASE_DIR = get_root_dir()
+    BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
