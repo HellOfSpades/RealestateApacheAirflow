@@ -22,6 +22,15 @@ def clean_real_estate_pipeline():
     def load_csv(path):
         return pd.read_csv(path, dtype=str)
 
+    @task
+    def fix_date(df, date_column_name):
+        df[date_column_name] = pd.to_datetime(
+            df[date_column_name],
+            format="%m/%d/%Y"
+        ).dt.strftime("%Y-%m-%d")
+
+        return df
+
 
     BASE_DIR = get_root_dir()
 
@@ -29,6 +38,10 @@ def clean_real_estate_pipeline():
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
 
     main_df = load_csv(main_path)
+
+
+    main_df = fix_date(main_df, date_column_name="Date Recorded")
+
 
     write_to_csv(main_df, output_path)
 
