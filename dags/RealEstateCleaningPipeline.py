@@ -61,21 +61,18 @@ def clean_real_estate_pipeline():
             df_main[orig_col] = df_cleaned[clean_col]
         return df_main
 
+    @task
+    def remove_column(df, column_name):
+        if column_name in df.columns:
+            df = df.drop(columns=[column_name])
+        return df
+
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
 
     main_df = load_csv(str(main_path))
-
-    # #fix Date Recorded
-    # main_df = remove_empty_entries(main_df, column_name="Date Recorded")
-    # main_df = correct_wrong_years(main_df, date_column_name="Date Recorded")
-    # main_df = fix_date(main_df, date_column_name="Date Recorded")
-    #
-    # #fix List Year
-    # main_df = year_to_jan_first(main_df, "List Year")
-    # main_df = rename_column(main_df, "List Year", "List Date")
 
     # Date Recorded branch
     date_df = remove_empty_entries(main_df, column_name="Date Recorded")
@@ -85,6 +82,10 @@ def clean_real_estate_pipeline():
     # List Year branch
     list_df = year_to_jan_first(main_df, "List Year")
     list_df = rename_column(list_df, "List Year", "List Date")
+
+    main_df = remove_column(main_df, "Non Use Code")
+    main_df = remove_column(main_df, "Assessor Remarks")
+    main_df = remove_column(main_df, "OPM remarks")
 
     # Merge cleaned columns back
     merged_df = merge_columns(main_df, date_df, ["Date Recorded"], ["Date Recorded"])
