@@ -13,71 +13,81 @@ from pendulum import datetime
      )
 def clean_real_estate_pipeline():
     @task
-    def write_to_csv(df, dir):
-        df.to_csv(dir, index=False)
-    @task
     def get_root_dir():
         return Path(__file__).resolve().parents[1]
-    @task
-    def load_csv(path):
-        return pd.read_csv(path, dtype=str)
 
     @task
-    def fix_date(df, date_column_name):
+    def fix_date(main_path, output_path, date_column_name):
+        df = pd.read_csv(main_path, dtype=str)
         df[date_column_name] = pd.to_datetime(
             df[date_column_name],
             format="%m/%d/%Y"
         ).dt.strftime("%Y-%m-%d")
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def remove_empty_entries(df, column_name):
+    def remove_empty_entries(main_path, output_path, column_name):
+        df = pd.read_csv(main_path, dtype=str)
         df = df[df[column_name].notna() & (df[column_name] != "")]
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     # fix dates where the year is 0023 or 0024 to be 2023 and 2025
     @task
-    def correct_wrong_years(df, date_column_name):
+    def correct_wrong_years(main_path, output_path, date_column_name):
+        df = pd.read_csv(main_path, dtype=str)
         mask = df[date_column_name].str[6:8] == "00"
         df.loc[mask, date_column_name] = (
                 df.loc[mask, date_column_name].str[:6] + "2" + df.loc[mask, date_column_name].str[7:]
         )
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def year_to_jan_first(df, year_column_name):
+    def year_to_jan_first(main_path, output_path, year_column_name):
+        df = pd.read_csv(main_path, dtype=str)
         df[year_column_name] = pd.to_datetime(df[year_column_name].astype(str) + "-01-01", format="%Y-%m-%d")
         df[year_column_name] = df[year_column_name].dt.strftime("%Y-%m-%d")
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def rename_column(df, old_column_name, new_column_name):
+    def rename_column(main_path, output_path, old_column_name, new_column_name):
+        df = pd.read_csv(main_path, dtype=str)
         df = df.rename(columns={old_column_name: new_column_name})
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def merge_columns(df_main, df_cleaned, original_cols, cleaned_cols):
+    def merge_columns(main_path, df_cleaned, original_cols, cleaned_cols):
+        df_main = pd.read_csv(main_path, dtype=str)
         for orig_col, clean_col in zip(original_cols, cleaned_cols):
             df_main[orig_col] = df_cleaned[clean_col]
         return df_main
 
     @task
-    def remove_column(df, column_name):
+    def remove_column(main_path, output_path, column_name):
+        df = pd.read_csv(main_path, dtype=str)
         if column_name in df.columns:
             df = df.drop(columns=[column_name])
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def update_property_type(df, property_col="Property Type", residential_col="Residential Type"):
+    def update_property_type(main_path, output_path, property_col="Property Type", residential_col="Residential Type"):
+        df = pd.read_csv(main_path, dtype=str)
         mask = df[property_col] == "Residential"
         df.loc[mask, property_col] = df.loc[mask, residential_col]
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def fill_missing_location(df,
+    def fill_missing_location(main_path, output_path,
                               location_col="Location",
                               town_col="Town",
                               address_col="Address"):
+        df = pd.read_csv(main_path, dtype=str)
         # Step 1: create lookup of valid locations
         lookup = (
             df[df[location_col].notna() & (df[location_col] != "")]
@@ -100,19 +110,22 @@ def clean_real_estate_pipeline():
         # Step 4: cleanup
         df = df.drop(columns=["Location_lookup"])
 
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def extract_coordinates(df, location_col="Location", long_column = "Longitude", lat_column = "Latitude"):
+    def extract_coordinates(main_path, output_path, location_col="Location", long_column = "Longitude", lat_column = "Latitude"):
+        df = pd.read_csv(main_path, dtype=str)
         coords = df[location_col].str.extract(r"POINT \(([-\d\.]+) ([-\d\.]+)\)")
 
         df[long_column] = pd.to_numeric(coords[0], errors="coerce")
         df[lat_column] = pd.to_numeric(coords[1], errors="coerce")
 
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
     @task
-    def fill_coordinates_from_geojson(df, geojson_path,
+    def fill_coordinates_from_geojson(main_path, geojson_path, output_path,
                                       address_col="Address",
                                       town_col="Town"):
         import json
@@ -137,7 +150,7 @@ def clean_real_estate_pipeline():
 
                 key = f"{number} {street}, {city}".upper()
                 lookup[key] = (lon, lat)
-
+        df = pd.read_csv(main_path, dtype=str)
         df["lookup_key"] = (
                 df[address_col].astype(str).str.strip() + ", " +
                 df[town_col].astype(str).str.strip()
@@ -152,7 +165,8 @@ def clean_real_estate_pipeline():
 
         df = df.drop(columns=["lookup_key"])
 
-        return df
+        df.to_csv(output_path, index=False)
+        return output_path
 
 
 
@@ -161,38 +175,35 @@ def clean_real_estate_pipeline():
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
 
+    staging_path = BASE_DIR / "data/staging/Real_Estate_Sales.csv"
+
     geo_coordinates_lookup_path = BASE_DIR / "data/raw/statewide-addresses-state.geojson"
 
-    main_df = load_csv(str(main_path))
-
     # Fix Coordinates
-    main_df = fill_missing_location(main_df)
-    main_df = extract_coordinates(main_df)
-    main_df = remove_column(main_df, "Location")
-    main_df = fill_coordinates_from_geojson(main_df, geojson_path=str(geo_coordinates_lookup_path))
+    staging_path = fill_missing_location(main_path, staging_path)
+    staging_path = extract_coordinates(staging_path, staging_path)
+    staging_path = remove_column(staging_path, staging_path, "Location")
+    staging_path = fill_coordinates_from_geojson(staging_path, geojson_path=str(geo_coordinates_lookup_path), output_path=staging_path)
 
     # Date Recorded branch
-    main_df = remove_empty_entries(main_df, column_name="Date Recorded")
-    main_df = correct_wrong_years(main_df, date_column_name="Date Recorded")
-    main_df = fix_date(main_df, date_column_name="Date Recorded")
+    staging_path = remove_empty_entries(staging_path, staging_path, column_name="Date Recorded")
+    staging_path = correct_wrong_years(staging_path, staging_path, date_column_name="Date Recorded")
+    staging_path = fix_date(staging_path, staging_path, date_column_name="Date Recorded")
 
     # List Year branch
-    main_df = year_to_jan_first(main_df, "List Year")
-    main_df = rename_column(main_df, "List Year", "List Date")
+    staging_path = year_to_jan_first(staging_path, staging_path, "List Year")
+    staging_path = rename_column(staging_path, staging_path, "List Year", "List Date")
 
     #remove unneeded columns
-    main_df = remove_column(main_df, "Non Use Code")
-    main_df = remove_column(main_df, "Assessor Remarks")
-    main_df = remove_column(main_df, "OPM remarks")
+    staging_path = remove_column(staging_path, staging_path, "Non Use Code")
+    staging_path = remove_column(staging_path, staging_path, "Assessor Remarks")
+    staging_path = remove_column(staging_path, staging_path, "OPM remarks")
 
     #Fix Property Type and Residential Type
-    main_df = update_property_type(main_df, "Property Type", "Residential Type")
-    main_df = remove_column(main_df, "Residential Type")
+    staging_path = update_property_type(staging_path, staging_path, "Property Type", "Residential Type")
+    output_path = remove_column(staging_path, output_path, "Residential Type")
 
 
-
-
-    write_to_csv(main_df, str(output_path))
 
 
 clean_real_estate_pipeline()
