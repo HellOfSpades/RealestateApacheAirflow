@@ -16,70 +16,76 @@ def clean_real_estate_pipeline():
     def get_root_dir():
         return Path(__file__).resolve().parents[1]
 
+    def write_to_csv(df, file_path):
+        file_path = Path(file_path)
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(file_path, index=False)
+
+    def read_csv(file_path, dtype=str):
+        file_path = Path(file_path)
+        if not file_path.exists():
+            raise FileNotFoundError(f"CSV file does not exist: {file_path}")
+
+        return pd.read_csv(file_path, dtype=dtype)
+
+
     @task
     def fix_date(main_path, output_path, date_column_name):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         df[date_column_name] = pd.to_datetime(
             df[date_column_name],
             format="%m/%d/%Y"
         ).dt.strftime("%Y-%m-%d")
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
     def remove_empty_entries(main_path, output_path, column_name):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         df = df[df[column_name].notna() & (df[column_name] != "")]
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     # fix dates where the year is 0023 or 0024 to be 2023 and 2025
     @task
     def correct_wrong_years(main_path, output_path, date_column_name):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         mask = df[date_column_name].str[6:8] == "00"
         df.loc[mask, date_column_name] = (
                 df.loc[mask, date_column_name].str[:6] + "2" + df.loc[mask, date_column_name].str[7:]
         )
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
     def year_to_jan_first(main_path, output_path, year_column_name):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         df[year_column_name] = pd.to_datetime(df[year_column_name].astype(str) + "-01-01", format="%Y-%m-%d")
         df[year_column_name] = df[year_column_name].dt.strftime("%Y-%m-%d")
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
     def rename_column(main_path, output_path, old_column_name, new_column_name):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         df = df.rename(columns={old_column_name: new_column_name})
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
-    def merge_columns(main_path, df_cleaned, original_cols, cleaned_cols):
-        df_main = pd.read_csv(main_path, dtype=str)
-        for orig_col, clean_col in zip(original_cols, cleaned_cols):
-            df_main[orig_col] = df_cleaned[clean_col]
-        return df_main
-
-    @task
     def remove_column(main_path, output_path, column_name):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         if column_name in df.columns:
             df = df.drop(columns=[column_name])
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
     def update_property_type(main_path, output_path, property_col="Property Type", residential_col="Residential Type"):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         mask = df[property_col] == "Residential"
         df.loc[mask, property_col] = df.loc[mask, residential_col]
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
@@ -87,7 +93,7 @@ def clean_real_estate_pipeline():
                               location_col="Location",
                               town_col="Town",
                               address_col="Address"):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         # Step 1: create lookup of valid locations
         lookup = (
             df[df[location_col].notna() & (df[location_col] != "")]
@@ -110,18 +116,18 @@ def clean_real_estate_pipeline():
         # Step 4: cleanup
         df = df.drop(columns=["Location_lookup"])
 
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
     def extract_coordinates(main_path, output_path, location_col="Location", long_column = "Longitude", lat_column = "Latitude"):
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         coords = df[location_col].str.extract(r"POINT \(([-\d\.]+) ([-\d\.]+)\)")
 
         df[long_column] = pd.to_numeric(coords[0], errors="coerce")
         df[lat_column] = pd.to_numeric(coords[1], errors="coerce")
 
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
     @task
@@ -150,7 +156,7 @@ def clean_real_estate_pipeline():
 
                 key = f"{number} {street}, {city}".upper()
                 lookup[key] = (lon, lat)
-        df = pd.read_csv(main_path, dtype=str)
+        df = read_csv(main_path)
         df["lookup_key"] = (
                 df[address_col].astype(str).str.strip() + ", " +
                 df[town_col].astype(str).str.strip()
@@ -165,7 +171,7 @@ def clean_real_estate_pipeline():
 
         df = df.drop(columns=["lookup_key"])
 
-        df.to_csv(output_path, index=False)
+        write_to_csv(df, output_path)
         return output_path
 
 
