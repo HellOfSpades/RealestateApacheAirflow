@@ -182,7 +182,10 @@ def clean_real_estate_pipeline():
         df2 = df.drop(columns=columns_to_extract, errors="ignore")
         write_to_csv(df1, output_path_1)
         write_to_csv(df2, output_path_2)
-        return output_path_1, output_path_2
+        return {
+            "selected": output_path_1,
+            "remaining": output_path_2
+        }
 
     @task
     def merge_files(file_paths, output_path):
@@ -210,29 +213,42 @@ def clean_real_estate_pipeline():
     #Remove unneeded rows
     staging_path = remove_empty_entries(main_path, staging_path, column_name="Date Recorded")
 
-    # Fix Coordinates
-    staging_path_coordinates, staging_path = split_columns(staging_path, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
 
+    #Split the csv for staging
+    split_result = split_columns(staging_path, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
+    staging_path_coordinates = split_result["selected"]
+    staging_path = split_result["remaining"]
+
+    split_result = split_columns(staging_path, staging_path_date_recorded, staging_path,
+                                                             ["Date Recorded"])
+    staging_path_date_recorded = split_result["selected"]
+    staging_path = split_result["remaining"]
+
+    split_result = split_columns(staging_path, staging_path_list_year, staging_path,
+                                                         ["List Year"])
+    staging_path_list_year = split_result["selected"]
+    staging_path = split_result["remaining"]
+
+    split_result = split_columns(staging_path, staging_path_property_type, staging_path,
+                                                             ["Property Type", "Residential Type"])
+    staging_path_property_type = split_result["selected"]
+    staging_path = split_result["remaining"]
+
+    # Fix Coordinates
     staging_path_coordinates = fill_missing_location(staging_path_coordinates, staging_path_coordinates)
     staging_path_coordinates = extract_coordinates(staging_path_coordinates, staging_path_coordinates)
     staging_path_coordinates = remove_column(staging_path_coordinates, staging_path_coordinates, "Location")
     staging_path_coordinates = fill_coordinates_from_geojson(staging_path_coordinates, geojson_path=str(geo_coordinates_lookup_path), output_path=staging_path_coordinates)
 
     # Date Recorded branch
-    staging_path_date_recorded, staging_path = split_columns(staging_path, staging_path_date_recorded, staging_path,
-                                                           ["Date Recorded"])
     staging_path_date_recorded = correct_wrong_years(staging_path_date_recorded, staging_path_date_recorded, date_column_name="Date Recorded")
     staging_path_date_recorded = fix_date(staging_path_date_recorded, staging_path_date_recorded, date_column_name="Date Recorded")
 
     # List Year branch
-    staging_path_list_year, staging_path = split_columns(staging_path, staging_path_list_year, staging_path,
-                                                             ["List Year"])
     staging_path_list_year = year_to_jan_first(staging_path_list_year, staging_path_list_year, "List Year")
     staging_path_list_year = rename_column(staging_path_list_year, staging_path_list_year, "List Year", "List Date")
 
     #Fix Property Type and Residential Type
-    staging_path_property_type, staging_path = split_columns(staging_path, staging_path_property_type, staging_path,
-                                                             ["Property Type", "Residential Type"])
     staging_path_property_type = update_property_type(staging_path_property_type, staging_path_property_type, "Property Type", "Residential Type")
     staging_path_property_type = remove_column(staging_path_property_type, staging_path_property_type, "Residential Type")
 
