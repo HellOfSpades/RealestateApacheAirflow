@@ -161,7 +161,7 @@ def clean_real_estate_pipeline():
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
 
-    geo_coordinates_lookup_path = BASE_DIR / "data/raw/statewide-addresses-state.csv"
+    geo_coordinates_lookup_path = BASE_DIR / "data/raw/statewide-addresses-state.geojson"
 
     main_df = load_csv(str(main_path))
 
