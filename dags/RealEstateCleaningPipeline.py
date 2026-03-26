@@ -178,12 +178,12 @@ def clean_real_estate_pipeline():
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
-    main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
-    output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
+    main_path = str(BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv")
+    output_path = str(BASE_DIR / "data/cleaned/Real_Estate_Sales.csv")
 
-    staging_path = BASE_DIR / "data/staging/Real_Estate_Sales.csv"
+    staging_path = str(BASE_DIR / "data/staging/Real_Estate_Sales.csv")
 
-    geo_coordinates_lookup_path = BASE_DIR / "data/raw/statewide-addresses-state.geojson"
+    geo_coordinates_lookup_path = str(BASE_DIR / "data/raw/statewide-addresses-state.geojson")
 
     # Fix Coordinates
     staging_path = fill_missing_location(main_path, staging_path)
