@@ -215,24 +215,24 @@ def clean_real_estate_pipeline():
 
 
     #Split the csv for staging
-    split_result = split_columns(staging_path, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
-    staging_path_coordinates = split_result["selected"]
-    staging_path = split_result["remaining"]
+    split_result1 = split_columns(staging_path, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
+    staging_path_coordinates = split_result1["selected"]
+    staging_path = split_result1["remaining"]
 
-    split_result = split_columns(staging_path, staging_path_date_recorded, staging_path,
+    split_result2 = split_columns(staging_path, staging_path_date_recorded, staging_path,
                                                              ["Date Recorded"])
-    staging_path_date_recorded = split_result["selected"]
-    staging_path = split_result["remaining"]
+    staging_path_date_recorded = split_result2["selected"]
+    staging_path = split_result2["remaining"]
 
-    split_result = split_columns(staging_path, staging_path_list_year, staging_path,
+    split_result3 = split_columns(staging_path, staging_path_list_year, staging_path,
                                                          ["List Year"])
-    staging_path_list_year = split_result["selected"]
-    staging_path = split_result["remaining"]
+    staging_path_list_year = split_result3["selected"]
+    staging_path = split_result3["remaining"]
 
-    split_result = split_columns(staging_path, staging_path_property_type, staging_path,
+    split_result4 = split_columns(staging_path, staging_path_property_type, staging_path,
                                                              ["Property Type", "Residential Type"])
-    staging_path_property_type = split_result["selected"]
-    staging_path = split_result["remaining"]
+    staging_path_property_type = split_result4["selected"]
+    staging_path = split_result4["remaining"]
 
     # Fix Coordinates
     staging_path_coordinates = fill_missing_location(staging_path_coordinates, staging_path_coordinates)
