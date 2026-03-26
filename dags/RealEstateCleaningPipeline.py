@@ -111,10 +111,57 @@ def clean_real_estate_pipeline():
 
         return df
 
+    @task
+    def fill_coordinates_from_geojson(df, geojson_path,
+                                      address_col="Address",
+                                      town_col="Town"):
+        import json
+
+        lookup = {}
+
+        with open(geojson_path, "r", encoding="utf-8") as f:
+            for line in f:
+                data = json.loads(line)
+
+                props = data["properties"]
+                geom = data["geometry"]
+
+                number = (props.get("number") or "").strip()
+                street = (props.get("street") or "").strip()
+                city = (props.get("city") or "").strip()
+
+                if not number or not street or not city:
+                    continue
+
+                lon, lat = geom["coordinates"]
+
+                key = f"{number} {street}, {city}".upper()
+                lookup[key] = (lon, lat)
+
+        df["lookup_key"] = (
+                df[address_col].astype(str).str.strip() + ", " +
+                df[town_col].astype(str).str.strip()
+        ).str.upper()
+
+        mapped = df["lookup_key"].map(lookup)
+
+        mask = df["Longitude"].isna() | df["Latitude"].isna()
+
+        df.loc[mask, "Longitude"] = mapped[mask].str[0]
+        df.loc[mask, "Latitude"] = mapped[mask].str[1]
+
+        df = df.drop(columns=["lookup_key"])
+
+        return df
+
+
+
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
     output_path = BASE_DIR / "data/cleaned/Real_Estate_Sales.csv"
+
+    geo_coordinates_lookup_path = BASE_DIR / "data/raw/statewide-addresses-state.csv"
 
     main_df = load_csv(str(main_path))
 
@@ -122,6 +169,7 @@ def clean_real_estate_pipeline():
     main_df = fill_missing_location(main_df)
     main_df = extract_coordinates(main_df)
     main_df = remove_column(main_df, "Location")
+    main_df = fill_coordinates_from_geojson(main_df, geojson_path=str(geo_coordinates_lookup_path))
 
     # Date Recorded branch
     main_df = remove_empty_entries(main_df, column_name="Date Recorded")
