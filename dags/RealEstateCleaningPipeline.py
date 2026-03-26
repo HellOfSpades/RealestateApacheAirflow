@@ -215,21 +215,21 @@ def clean_real_estate_pipeline():
 
 
     #Split the csv for staging
-    split_result1 = split_columns(staging_path, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
+    split_result1 = split_columns.override(task_id="split_coordinates")(staging_path, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
     staging_path_coordinates = split_result1["selected"]
     staging_path = split_result1["remaining"]
 
-    split_result2 = split_columns(staging_path, staging_path_date_recorded, staging_path,
+    split_result2 = split_columns.override(task_id="split_date")(staging_path, staging_path_date_recorded, staging_path,
                                                              ["Date Recorded"])
     staging_path_date_recorded = split_result2["selected"]
     staging_path = split_result2["remaining"]
 
-    split_result3 = split_columns(staging_path, staging_path_list_year, staging_path,
+    split_result3 = split_columns.override(task_id="split_list_year")(staging_path, staging_path_list_year, staging_path,
                                                          ["List Year"])
     staging_path_list_year = split_result3["selected"]
     staging_path = split_result3["remaining"]
 
-    split_result4 = split_columns(staging_path, staging_path_property_type, staging_path,
+    split_result4 = split_columns.override(task_id="split_property")(staging_path, staging_path_property_type, staging_path,
                                                              ["Property Type", "Residential Type"])
     staging_path_property_type = split_result4["selected"]
     staging_path = split_result4["remaining"]
@@ -250,10 +250,10 @@ def clean_real_estate_pipeline():
 
     #Fix Property Type and Residential Type
     staging_path_property_type = update_property_type(staging_path_property_type, staging_path_property_type, "Property Type", "Residential Type")
-    staging_path_property_type = remove_column(staging_path_property_type, staging_path_property_type, "Residential Type")
+    staging_path_property_type = remove_column.override(task_id="remove_residential_type")(staging_path_property_type, staging_path_property_type, "Residential Type")
 
     #remove unneeded columns
-    staging_path = remove_column(staging_path, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
+    staging_path = remove_column.override(task_id="remove_unneeded_columns")(staging_path, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
 
     #merge all files together in the clean output file
     merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
