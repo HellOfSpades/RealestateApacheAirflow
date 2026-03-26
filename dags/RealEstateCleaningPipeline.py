@@ -102,6 +102,15 @@ def clean_real_estate_pipeline():
 
         return df
 
+    @task
+    def extract_coordinates(df, location_col="Location", long_column = "Longitude", lat_column = "Latitude"):
+        coords = df[location_col].str.extract(r"POINT \(([-\d\.]+) ([-\d\.]+)\)")
+
+        df[long_column] = pd.to_numeric(coords[0], errors="coerce")
+        df[lat_column] = pd.to_numeric(coords[1], errors="coerce")
+
+        return df
+
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv"
@@ -109,7 +118,10 @@ def clean_real_estate_pipeline():
 
     main_df = load_csv(str(main_path))
 
+    # Fix Coordinates
     main_df = fill_missing_location(main_df)
+    main_df = extract_coordinates(main_df)
+    main_df = remove_column(main_df, "Location")
 
     # Date Recorded branch
     main_df = remove_empty_entries(main_df, column_name="Date Recorded")
@@ -129,9 +141,6 @@ def clean_real_estate_pipeline():
     main_df = update_property_type(main_df, "Property Type", "Residential Type")
     main_df = remove_column(main_df, "Residential Type")
 
-    # Merge cleaned columns back
-    # merged_df = merge_columns(main_df, date_df, ["Date Recorded"], ["Date Recorded"])
-    # merged_df = merge_columns(merged_df, list_df, ["List Year"], ["List Date"])
 
 
 
