@@ -175,7 +175,7 @@ def clean_real_estate_pipeline():
         write_to_csv(df, output_path)
         return output_path
 
-    @task
+    @task(multiple_outputs=True)
     def split_columns(input_path, output_path_1, output_path_2, columns_to_extract):
         df = read_csv(input_path)
         df1 = df[columns_to_extract].copy()
