@@ -73,7 +73,7 @@ def clean_real_estate_pipeline():
         return output_path
 
     @task
-    def remove_column(main_path, output_path, column_names):
+    def remove_columns(main_path, output_path, column_names):
         df = read_csv(main_path)
         existing_cols = [col for col in column_names if col in df.columns]
         if existing_cols:
@@ -237,7 +237,7 @@ def clean_real_estate_pipeline():
     # Fix Coordinates
     staging_path_coordinates = fill_missing_location(staging_path_coordinates, staging_path_coordinates)
     staging_path_coordinates = extract_coordinates(staging_path_coordinates, staging_path_coordinates)
-    staging_path_coordinates = remove_column(staging_path_coordinates, staging_path_coordinates, "Location")
+    staging_path_coordinates = remove_columns(staging_path_coordinates, staging_path_coordinates, "Location")
     staging_path_coordinates = fill_coordinates_from_geojson(staging_path_coordinates, geojson_path=str(geo_coordinates_lookup_path), output_path=staging_path_coordinates)
 
     # Date Recorded branch
@@ -250,10 +250,10 @@ def clean_real_estate_pipeline():
 
     #Fix Property Type and Residential Type
     staging_path_property_type = update_property_type(staging_path_property_type, staging_path_property_type, "Property Type", "Residential Type")
-    staging_path_property_type = remove_column.override(task_id="remove_residential_type")(staging_path_property_type, staging_path_property_type, "Residential Type")
+    staging_path_property_type = remove_columns.override(task_id="remove_residential_type")(staging_path_property_type, staging_path_property_type, "Residential Type")
 
     #remove unneeded columns
-    staging_path = remove_column.override(task_id="remove_unneeded_columns")(staging_path, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
+    staging_path = remove_columns.override(task_id="remove_unneeded_columns")(staging_path, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
 
     #merge all files together in the clean output file
     merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
