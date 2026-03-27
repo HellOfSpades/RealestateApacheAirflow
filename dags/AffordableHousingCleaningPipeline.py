@@ -53,4 +53,4 @@ def clean_affordable_housing_pipeline():
     staging_path = remove_columns(main_path, staging_path, ["Town Code","Government Assisted","Tenant Rental Assistance", "Single Family CHFA/ USDA Mortgages","Deed Restricted Units", "Total Assisted Units"])
     output_path = year_to_jan_first(staging_path, output_path, "Year")
 
-clean_unemployment_pipeline()
+clean_affordable_housing_pipeline()
