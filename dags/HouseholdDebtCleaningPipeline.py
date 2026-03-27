@@ -81,7 +81,7 @@ def clean_household_debt_pipeline():
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = str(BASE_DIR / "data/raw/household_debt_by_state_Raw.csv")
-    output_path = str(BASE_DIR / "data/cleaned/household_debt_by_state.csv")
+    output_path = str(BASE_DIR / "data/cleaned/household_debt.csv")
 
     #staging paths
     staging_path = str(BASE_DIR / "data/staging/household_debt.csv")
