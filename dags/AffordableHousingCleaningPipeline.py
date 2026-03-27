@@ -11,7 +11,7 @@ from pendulum import datetime
      tags=["activity", "custom dag"],
      catchup=False
      )
-def clean_unemployment_pipeline():
+def clean_affordable_housing_pipeline():
 
     def write_to_csv(df, file_path):
         file_path = Path(file_path)
