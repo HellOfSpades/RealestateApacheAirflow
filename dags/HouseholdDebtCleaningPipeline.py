@@ -46,13 +46,37 @@ def clean_household_debt_pipeline():
         return output_csv_path
 
     @task
-    def year_to_jan_first(main_path, output_path, year_column_name):
+    def year_quarter_to_date(main_path, output_path, year_column, quarter_column, new_date_column="date"):
         df = read_csv(main_path)
-        df[year_column_name] = pd.to_datetime(df[year_column_name].astype(str) + "-01-01", format="%Y-%m-%d")
-        df[year_column_name] = df[year_column_name].dt.strftime("%Y-%m-%d")
+
+        for col in [year_column, quarter_column]:
+            if col not in df.columns:
+                raise ValueError(f"Column '{col}' not found in CSV")
+
+
+        df[year_column] = df[year_column].astype(int)
+        df[quarter_column] = df[quarter_column].astype(int)
+
+        quarter_to_month = {
+            1: 1,
+            2: 4,
+            3: 7,
+            4: 10
+        }
+
+        if not df[quarter_column].isin(quarter_to_month.keys()).all():
+            raise ValueError("Quarter column must only contain values 1–4")
+
+        df[new_date_column] = pd.to_datetime(
+            df[year_column].astype(str) + "-" +
+            df[quarter_column].map(quarter_to_month).astype(str) + "-01",
+            format="%Y-%m-%d"
+        ).dt.strftime("%Y-%m-%d")
+
+        df = df.drop(columns=[year_column, quarter_column])
+
         write_to_csv(df, output_path)
         return output_path
-
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -60,10 +84,10 @@ def clean_household_debt_pipeline():
     output_path = str(BASE_DIR / "data/cleaned/household_debt_by_state.csv")
 
     #staging paths
-    staging_path = str(BASE_DIR / "data/staging/household_debt_by_state.csv")
+    staging_path = str(BASE_DIR / "data/staging/household_debt.csv")
 
     staging_path = filter_and_drop_column(main_path, staging_path, "state_fips", "09")
-    output_path = year_to_jan_first(staging_path, output_path, "year")
+    output_path = year_quarter_to_date(staging_path, output_path, "year", "qtr", "Date Recorded")
 
 
 
