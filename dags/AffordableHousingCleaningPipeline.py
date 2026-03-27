@@ -50,7 +50,7 @@ def clean_affordable_housing_pipeline():
     #staging paths
     staging_path = str(BASE_DIR / "data/staging/Affordable_Housing.csv")
 
-    staging_path = remove_columns(main_path, staging_path, ["Town Code","Government Assisted","Tenant Rental Assistance", "Single Family CHFA/ USDA Mortgages","Deed Restricted Units", "Total Assisted Units"])
+    staging_path = remove_columns(main_path, staging_path, ["Town Code","Government Assisted","Tenant Rental Assistance", " Single Family CHFA/ USDA Mortgages","Deed Restricted Units", "Total Assisted Units"])
     output_path = year_to_jan_first(staging_path, output_path, "Year")
 
 clean_affordable_housing_pipeline()
