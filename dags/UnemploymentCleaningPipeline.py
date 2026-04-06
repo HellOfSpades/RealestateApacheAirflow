@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -32,6 +33,17 @@ def clean_unemployment_pipeline():
         write_to_csv(df, output_path)
         return output_path
 
+    @task
+    def write_clean_csv(input_path, output_path):
+        df = read_csv(input_path)
+        write_to_csv(df, output_path)
+        try:
+            if os.path.exists(input_path):
+                os.remove(input_path)
+        except Exception as e:
+            print(f"Failed to delete {input_path}: {e}")
+        return output_path
+
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = str(BASE_DIR / "data/raw/UNEMPLOYCT_Raw.csv")
@@ -40,7 +52,7 @@ def clean_unemployment_pipeline():
     #staging paths
     staging_path = str(BASE_DIR / "data/staging/Unemployment.csv")
 
-    output_path = fix_date(main_path, output_path, "observation_date")
-
+    staging_path = fix_date(main_path, staging_path, "observation_date")
+    output_path = write_clean_csv(staging_path, output_path)
 
 clean_unemployment_pipeline()
