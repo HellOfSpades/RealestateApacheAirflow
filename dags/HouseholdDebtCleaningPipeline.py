@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -78,6 +79,17 @@ def clean_household_debt_pipeline():
         write_to_csv(df, output_path)
         return output_path
 
+    @task
+    def write_clean_csv(input_path, output_path):
+        df = read_csv(input_path)
+        write_to_csv(df, output_path)
+        try:
+            if os.path.exists(input_path):
+                os.remove(input_path)
+        except Exception as e:
+            print(f"Failed to delete {input_path}: {e}")
+        return output_path
+
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = str(BASE_DIR / "data/raw/household_debt_by_state_Raw.csv")
@@ -87,8 +99,9 @@ def clean_household_debt_pipeline():
     staging_path = str(BASE_DIR / "data/staging/household_debt.csv")
 
     staging_path = filter_and_drop_column(main_path, staging_path, "state_fips", "09")
-    output_path = year_quarter_to_date(staging_path, output_path, "year", "qtr", "Date Recorded")
+    staging_path = year_quarter_to_date(staging_path, staging_path, "year", "qtr", "Date Recorded")
 
+    output_path = write_clean_csv(staging_path, output_path)
 
 
 

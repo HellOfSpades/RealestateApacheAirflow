@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -40,7 +41,16 @@ def clean_affordable_housing_pipeline():
             df = df.drop(columns=column_names)
         write_to_csv(df, output_path)
         return output_path
-
+    @task
+    def write_clean_csv(input_path, output_path):
+        df = read_csv(input_path)
+        write_to_csv(df, output_path)
+        try:
+            if os.path.exists(input_path):
+                os.remove(input_path)
+        except Exception as e:
+            print(f"Failed to delete {input_path}: {e}")
+        return output_path
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -51,6 +61,8 @@ def clean_affordable_housing_pipeline():
     staging_path = str(BASE_DIR / "data/staging/Affordable_Housing.csv")
 
     staging_path = remove_columns(main_path, staging_path, ["Town Code","Government Assisted","Tenant Rental Assistance", " Single Family CHFA/ USDA Mortgages","Deed Restricted Units", "Total Assisted Units"])
-    output_path = year_to_jan_first(staging_path, output_path, "Year")
+    staging_path = year_to_jan_first(staging_path, staging_path, "Year")
+
+    output_path = write_clean_csv(staging_path, output_path)
 
 clean_affordable_housing_pipeline()
