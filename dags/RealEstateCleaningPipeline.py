@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 
 import pandas as pd
@@ -191,6 +192,15 @@ def clean_real_estate_pipeline():
     def merge_files(file_paths, output_path):
         dfs = [read_csv(p) for p in file_paths]
         df_merged = pd.concat(dfs, axis=1)
+
+        # Delete staging files before writing output
+        for path in file_paths:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception as e:
+                print(f"Failed to delete {path}: {e}")
+
         write_to_csv(df_merged, output_path)
         return output_path
 
