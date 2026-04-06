@@ -205,6 +205,58 @@ def clean_real_estate_pipeline():
         return output_path
 
 
+    #send data to druid
+    @task
+    def load_to_druid(csv_path, datasource_name="real_estate_sales"):
+        import requests
+        import json
+
+        DRUID_OVERLORD = "http://localhost:8090/druid/indexer/v1/task"
+
+        ingestion_spec = {
+            "type": "index_parallel",
+            "spec": {
+                "dataSchema": {
+                    "dataSource": datasource_name,
+                    "timestampSpec": {
+                        "column": "Date Recorded",
+                        "format": "yyyy-MM-dd"
+                    },
+                    "dimensionsSpec": {
+                        "dimensions": []
+                    },
+                    "granularitySpec": {
+                        "type": "uniform",
+                        "segmentGranularity": "DAY",
+                        "queryGranularity": "NONE",
+                        "rollup": False
+                    }
+                },
+                "ioConfig": {
+                    "type": "index_parallel",
+                    "inputSource": {
+                        "type": "local",
+                        "baseDir": str(Path(csv_path).parent),
+                        "filter": Path(csv_path).name
+                    },
+                    "inputFormat": {
+                        "type": "csv",
+                        "findColumnsFromHeader": True
+                    }
+                },
+                "tuningConfig": {
+                    "type": "index_parallel"
+                }
+            }
+        }
+
+        response = requests.post(
+            DRUID_OVERLORD,
+            headers={"Content-Type": "application/json"},
+            data=json.dumps(ingestion_spec)
+        )
+        return output_path
+
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
@@ -266,10 +318,10 @@ def clean_real_estate_pipeline():
     staging_path = remove_columns.override(task_id="remove_unneeded_columns")(staging_path, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
 
     #merge all files together in the clean output file
-    merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
+    output_path = merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
                output_path)
 
-
+    output_path = load_to_druid(output_path)
 
 
 clean_real_estate_pipeline()
