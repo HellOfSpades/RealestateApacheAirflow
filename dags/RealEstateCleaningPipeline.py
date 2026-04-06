@@ -211,7 +211,7 @@ def clean_real_estate_pipeline():
         import requests
         import json
 
-        DRUID_OVERLORD = "http://localhost:8090/druid/indexer/v1/task"
+        DRUID_OVERLORD = "http://localhost:8888/druid/indexer/v1/task"
 
         ingestion_spec = {
             "type": "index_parallel",
