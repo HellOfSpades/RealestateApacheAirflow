@@ -99,7 +99,26 @@ Top pefroming cities growth explained over time
 
 **Interpretation:** Performance is highly sensitive to labor market conditions.  
 
-### 7. Final Business Recommendations
+### 7. Sales Volume and Prices against Unemployment
+![unemployment vs sales volume](images/unempl_vs_sales.png "unemployment vs sales volume")
+- **Insight:** Sales volume crashed by roughly 60% (from ~12k to ~5k) during the 2008–2011 unemployment peak, while the Median Sales Ratio remained completely flat (~0.65).
+- **Driven by:**  Macroeconomic recession drastically reducing buyer activity (liquidity) rather than crashing relative property assessments.
+  
+**Interpretation** Market velocity dries up during high unemployment, but baseline property valuation ratios are highly resilient to job market shocks.
+
+### 8. Sales Volume and Prices against Debt
+![debt vs sales sales](images/debt_vs_sales.png "debt vs sales sales")
+- **Insight:** Average household debt levels rose steadily from 2002 up to the 2008 financial crash, immediately followed by a massive collapse in transaction volume.
+
+- **Driven by:**  Over-leveraged households hitting borrowing limits and exiting the real estate market.
+
+**Interpretation** Rising debt acts as a leading indicator for a crash in market activity (volume), but it does not destabilize the fundamental assessed-to-sale price ratio.
+
+### 9. Affordable Housing Impact on Average Sales Ratio
+![affordability](images/affordability.png "affordability")
+**Interpretation** There is no strong negative correlation between the amount of affordable housing in a town and its mean sales ratio. In other words, the data suggests that higher percentages of affordable housing do not systematically "crash" or lower property value ratios. The greatest variance in pricing ratios actually occurs in areas with the least affordable housing.
+
+### 10. Final Business Recommendations
 **A. Portfolio Strategy (What to Buy)**  
 - **Core (Low Risk – 60–70%):** Stamford, Bridgeport, Canaan → stability, liquidity  
 - **Growth Allocation (20–30%):** Waterbury, New London → capture appreciation  
@@ -107,7 +126,8 @@ Top pefroming cities growth explained over time
 
 **B. Timing Strategy (When to Invest)**  
 - Market cooling but not distressed  
-- Accumulate gradually; focus on undervalued markets with improving fundamentals  
+- Accumulate gradually; focus on undervalued markets with improving fundamentals
+- **[Data Insight]** Monitor household debt levels: our historical models show rising consumer debt acts as a reliable leading indicator for a collapse in transaction volume, signaling when to pause aggressive acquisitions. 
 
 **C. Risk Management**  
 - Avoid low-liquidity towns  
