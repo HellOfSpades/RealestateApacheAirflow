@@ -31,7 +31,7 @@ This analysis addresses three key challenges:
 - Developed key metrics (sales ratio, growth rates, composite investment score) to evaluate market performance.  
 
 **Skills & Tools:**  
-- **Data Engineering & Processing:** Apache Airflow  
+- **Data Engineering & Processing:** Apache Airflow, Python (pandas)  
 - **Database & Analytics:** Apache Druid, SQL  
 - **Data Visualization:** Apache Superset  
 - **Infrastructure:** Docker (Docker Compose)  
