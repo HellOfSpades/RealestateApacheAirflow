@@ -50,6 +50,9 @@ x-airflow-common:
   # Comment the image line, place your Dockerfile in the directory where you placed the docker-compose.yaml
   # and uncomment the "build" line below, Then run `docker-compose build` to build the images.
   #image: ${AIRFLOW_IMAGE_NAME:-apache/airflow:3.1.7}
+  networks:
+    - default
+    - apachekafka_default
   build: .
   env_file:
     - ${ENV_FILE_PATH:-.env}
@@ -336,3 +339,6 @@ services:
 
 volumes:
   postgres-db-volume:
+networks:
+  apachekafka_default:
+    external: true
