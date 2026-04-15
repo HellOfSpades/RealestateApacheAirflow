@@ -209,7 +209,7 @@ def clean_real_estate_pipeline():
     @task
     def send_to_kafka(file_path):
         producer = KafkaProducer(
-            bootstrap_servers="host.docker.internal:9092",
+            bootstrap_servers="broker:9092",
             value_serializer=lambda v: json.dumps(v).encode("utf-8")
         )
 
