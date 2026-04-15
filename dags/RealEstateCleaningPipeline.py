@@ -1,9 +1,11 @@
+import json
 import os
 from pathlib import Path
 
 import pandas as pd
 from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import dag, task
+from kafka import KafkaProducer
 from pendulum import datetime
 
 
@@ -204,58 +206,23 @@ def clean_real_estate_pipeline():
         write_to_csv(df_merged, output_path)
         return output_path
 
-
-    #send data to druid
     @task
-    def load_to_druid(csv_path, datasource_name="real_estate_sales"):
-        import requests
-        import json
-
-        DRUID_OVERLORD = "http://localhost:8888/druid/indexer/v1/task"
-
-        ingestion_spec = {
-            "type": "index_parallel",
-            "spec": {
-                "dataSchema": {
-                    "dataSource": datasource_name,
-                    "timestampSpec": {
-                        "column": "Date Recorded",
-                        "format": "yyyy-MM-dd"
-                    },
-                    "dimensionsSpec": {
-                        "dimensions": []
-                    },
-                    "granularitySpec": {
-                        "type": "uniform",
-                        "segmentGranularity": "DAY",
-                        "queryGranularity": "NONE",
-                        "rollup": False
-                    }
-                },
-                "ioConfig": {
-                    "type": "index_parallel",
-                    "inputSource": {
-                        "type": "local",
-                        "baseDir": str(Path(csv_path).parent),
-                        "filter": Path(csv_path).name
-                    },
-                    "inputFormat": {
-                        "type": "csv",
-                        "findColumnsFromHeader": True
-                    }
-                },
-                "tuningConfig": {
-                    "type": "index_parallel"
-                }
-            }
-        }
-
-        response = requests.post(
-            DRUID_OVERLORD,
-            headers={"Content-Type": "application/json"},
-            data=json.dumps(ingestion_spec)
+    def send_to_kafka(file_path):
+        producer = KafkaProducer(
+            bootstrap_servers="host.docker.internal:9092",
+            value_serializer=lambda v: json.dumps(v).encode("utf-8")
         )
-        return output_path
+
+        df = read_csv(file_path)
+
+        # convert NaN → None (important for JSON)
+        df = df.where(pd.notnull(df), None)
+
+        for _, row in df.iterrows():
+            producer.send("real_estate", row.to_dict())
+
+        producer.flush()
+
 
 
     BASE_DIR = Path(__file__).resolve().parents[1]
@@ -321,7 +288,8 @@ def clean_real_estate_pipeline():
     output_path = merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
                output_path)
 
-    output_path = load_to_druid(output_path)
+    send_to_kafka(output_path)
+
 
 
 clean_real_estate_pipeline()
