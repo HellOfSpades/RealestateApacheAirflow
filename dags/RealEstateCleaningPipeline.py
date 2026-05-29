@@ -332,7 +332,7 @@ def clean_real_estate_pipeline():
     staging_path_list_year = split_result3["selected"]
     staging_path_split3 = split_result3["remaining"]
 
-    split_result4 = split_columns.override(task_id="split_property")(staging_path_split4, staging_path_property_type, staging_path,
+    split_result4 = split_columns.override(task_id="split_property")(staging_path_split3, staging_path_property_type, staging_path,
                                                              ["Property Type", "Residential Type"])
     staging_path_property_type = split_result4["selected"]
     remaining_columns = split_result4["remaining"]
