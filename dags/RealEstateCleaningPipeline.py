@@ -360,12 +360,14 @@ def clean_real_estate_pipeline():
     output_path = merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
                output_path)
 
-
-    metrics_csv_path, cleaned_csv_path = generate_ml_map_layer_with_metrics(
+    result = generate_ml_map_layer_with_metrics(
         cleaned_csv_path=output_path,
         geojson_output_path=geojson_layer_path,
         metrics_csv_path=metrics_file_path
     )
+
+    metrics_csv_path = result["metrics_csv"]
+    geojson_layer = result["geojson_layer"]
 
 
 
