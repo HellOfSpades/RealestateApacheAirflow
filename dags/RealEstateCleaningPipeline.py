@@ -340,7 +340,7 @@ def clean_real_estate_pipeline():
     # Fix Coordinates
     staging_path_coordinates1 = fill_missing_location(staging_path_coordinates, staging_path_coordinates)
     staging_path_coordinates2 = extract_coordinates(staging_path_coordinates1, staging_path_coordinates)
-    staging_path_coordinates3 = remove_columns(staging_path_coordinates2, staging_path_coordinates, "Location")
+    staging_path_coordinates3 = remove_columns(staging_path_coordinates2, staging_path_coordinates, ["Location"])
     staging_path_coordinates4 = fill_coordinates_from_geojson(staging_path_coordinates3, geojson_path=str(geo_coordinates_lookup_path), output_path=staging_path_coordinates)
 
     # Date Recorded branch
@@ -353,7 +353,7 @@ def clean_real_estate_pipeline():
 
     #Fix Property Type and Residential Type
     staging_path_property_type1 = update_property_type(staging_path_property_type, staging_path_property_type, "Property Type", "Residential Type")
-    staging_path_property_type2 = remove_columns.override(task_id="remove_residential_type")(staging_path_property_type1, staging_path_property_type, "Residential Type")
+    staging_path_property_type2 = remove_columns.override(task_id="remove_residential_type")(staging_path_property_type1, staging_path_property_type, ["Residential Type"])
 
     #remove unneeded columns
     remaining_columns1 = remove_columns.override(task_id="remove_unneeded_columns")(remaining_columns, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
