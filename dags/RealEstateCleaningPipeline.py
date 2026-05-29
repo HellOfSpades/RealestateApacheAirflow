@@ -6,6 +6,12 @@ from airflow.providers.standard.operators.python import PythonOperator
 from airflow.sdk import dag, task
 from pendulum import datetime
 
+import numpy as np
+from sklearn.ensemble import RandomForestRegressor
+import geopandas as gpd
+from shapely.geometry import Point
+from pathlib import Path
+
 
 @dag(start_date=datetime(2026, 1, 1),
      schedule="@daily",
@@ -204,12 +210,96 @@ def clean_real_estate_pipeline():
         write_to_csv(df_merged, output_path)
         return output_path
 
+    @task(multiple_outputs=True)
+    def generate_ml_map_layer_with_metrics(cleaned_csv_path, geojson_output_path, metrics_csv_path):
+        import pandas as pd
+        import numpy as np
+        from sklearn.ensemble import RandomForestRegressor
+        from sklearn.model_selection import train_test_split
+        from sklearn import metrics
+        import geopandas as gpd
+        from shapely.geometry import Point
+        from pathlib import Path
+
+        df = pd.read_csv(cleaned_csv_path)
+
+        df['Date Recorded'] = pd.to_datetime(df['Date Recorded'])
+        df['month'] = df['Date Recorded'].dt.month
+
+        df = df.dropna(subset=['Latitude', 'Longitude', 'Sales Ratio', 'month'])
+
+        X = df[['Latitude', 'Longitude', 'month']].apply(pd.to_numeric)
+        y = pd.to_numeric(df['Sales Ratio'])
+
+        X_train, X_test, y_train, y_test = train_test_split(
+            X, y, test_size=0.20, random_state=42
+        )
+
+        model = RandomForestRegressor(n_estimators=50, max_depth=12, n_jobs=-1, random_state=42)
+        model.fit(X_train, y_train)
+
+        y_pred = model.predict(X_test)
+
+        mae = metrics.mean_absolute_error(y_test, y_pred)
+        mse = metrics.mean_squared_error(y_test, y_pred)
+        r2 = metrics.r2_score(y_test, y_pred)
+
+        metrics_data = {
+            'Metric': ['Mean Absolute Error (MAE)', 'Mean Squared Error (MSE)', 'R-squared (R2)'],
+            'Value': [float(mae), float(mse), float(r2)],
+            'Description': [
+                'Average magnitude of the prediction errors.',
+                'Average squared difference between prediction and actual values.',
+                'Percentage of variance explained by the coordinates and month.'
+            ]
+        }
+        metrics_df = pd.DataFrame(metrics_data)
+
+        Path(metrics_csv_path).parent.mkdir(parents=True, exist_ok=True)
+        metrics_df.to_csv(metrics_csv_path, index=False)
+        print(f"Metrics successfully saved to {metrics_csv_path}")
+
+        lat_min, lat_max = X['Latitude'].min(), X['Latitude'].max()
+        lon_min, lon_max = X['Longitude'].min(), X['Longitude'].max()
+
+        lat_grid = np.linspace(lat_min, lat_max, 100)
+        lon_grid = np.linspace(lon_min, lon_max, 100)
+
+        grid_points = []
+        months = np.arange(1, 13)
+
+        for lat in lat_grid:
+            for lon in lon_grid:
+                pred_df = pd.DataFrame({'Latitude': lat, 'Longitude': lon, 'month': months})
+                predictions = model.predict(pred_df)
+
+                grid_points.append({
+                    'Latitude': lat,
+                    'Longitude': lon,
+                    'sales_ratio': float(np.mean(predictions)),
+                    'buy_month': int(months[np.argmin(predictions)]),
+                    'sell_month': int(months[np.argmax(predictions)])
+                })
+
+        grid_df = pd.DataFrame(grid_points)
+        geometry = [Point(xy) for xy in zip(grid_df['Longitude'], grid_df['Latitude'])]
+        gdf = gpd.GeoDataFrame(grid_df, geometry=geometry, crs="EPSG:4326")
+
+        Path(geojson_output_path).parent.mkdir(parents=True, exist_ok=True)
+        gdf.to_file(geojson_output_path, driver="GeoJSON")
+
+        return {
+            "geojson_layer": geojson_output_path,
+            "metrics_csv": metrics_csv_path
+        }
 
 
     BASE_DIR = Path(__file__).resolve().parents[1]
 
     main_path = str(BASE_DIR / "data/raw/Real_Estate_Sales_Raw.csv")
     output_path = str(BASE_DIR / "data/cleaned/Real_Estate_Sales.csv")
+
+    geojson_layer_path = str(BASE_DIR / "data/output/map_layer.geojson")
 
     #staging paths
     staging_path = str(BASE_DIR / "data/staging/Real_Estate_Sales.csv")
@@ -219,6 +309,7 @@ def clean_real_estate_pipeline():
     staging_path_property_type = str(BASE_DIR / "data/staging/Real_Estate_Sales_Property_Type.csv")
 
     geo_coordinates_lookup_path = str(BASE_DIR / "data/raw/statewide-addresses-state.geojson")
+    metrics_file_path = str(BASE_DIR / "data/output/model_evaluation_metrics.csv")
 
     #Remove unneeded rows
     staging_path = remove_empty_entries(main_path, staging_path, column_name="Date Recorded")
@@ -266,9 +357,16 @@ def clean_real_estate_pipeline():
     staging_path = remove_columns.override(task_id="remove_unneeded_columns")(staging_path, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
 
     #merge all files together in the clean output file
-    merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
+    output_path = merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
                output_path)
 
+    geojson_layer_path = generate_ml_map_layer(output_path, geojson_layer_path)
+
+    metrics_csv_path, cleaned_csv_path = generate_ml_map_layer_with_metrics(
+        cleaned_csv_path=output_path,
+        geojson_output_path=geojson_layer_path,
+        metrics_csv_path=metrics_file_path
+    )
 
 
 
