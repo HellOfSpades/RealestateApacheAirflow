@@ -199,6 +199,8 @@ def clean_real_estate_pipeline():
         dfs = [read_csv(p) for p in file_paths]
         df_merged = pd.concat(dfs, axis=1)
 
+        df_merged = df_merged.loc[:, ~df_merged.columns.duplicated()]
+
         # Delete staging files before writing output
         for path in file_paths:
             try:
