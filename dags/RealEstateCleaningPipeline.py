@@ -314,52 +314,52 @@ def clean_real_estate_pipeline():
     metrics_file_path = str(BASE_DIR / "data/output/model_evaluation_metrics.csv")
 
     #Remove unneeded rows
-    staging_path = remove_empty_entries(main_path, staging_path, column_name="Date Recorded")
+    removed_empty_data = remove_empty_entries(main_path, staging_path, column_name="Date Recorded")
 
 
     #Split the csv for staging
-    split_result1 = split_columns.override(task_id="split_coordinates")(staging_path, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
+    split_result1 = split_columns.override(task_id="split_coordinates")(removed_empty_data, staging_path_coordinates, staging_path, ["Location", "Address", "Town"])
     staging_path_coordinates = split_result1["selected"]
-    staging_path = split_result1["remaining"]
+    staging_path_split1 = split_result1["remaining"]
 
-    split_result2 = split_columns.override(task_id="split_date")(staging_path, staging_path_date_recorded, staging_path,
+    split_result2 = split_columns.override(task_id="split_date")(staging_path_split1, staging_path_date_recorded, staging_path,
                                                              ["Date Recorded"])
     staging_path_date_recorded = split_result2["selected"]
-    staging_path = split_result2["remaining"]
+    staging_path_split2 = split_result2["remaining"]
 
-    split_result3 = split_columns.override(task_id="split_list_year")(staging_path, staging_path_list_year, staging_path,
+    split_result3 = split_columns.override(task_id="split_list_year")(staging_path_split2, staging_path_list_year, staging_path,
                                                          ["List Year"])
     staging_path_list_year = split_result3["selected"]
-    staging_path = split_result3["remaining"]
+    staging_path_split3 = split_result3["remaining"]
 
-    split_result4 = split_columns.override(task_id="split_property")(staging_path, staging_path_property_type, staging_path,
+    split_result4 = split_columns.override(task_id="split_property")(staging_path_split4, staging_path_property_type, staging_path,
                                                              ["Property Type", "Residential Type"])
     staging_path_property_type = split_result4["selected"]
-    staging_path = split_result4["remaining"]
+    remaining_columns = split_result4["remaining"]
 
     # Fix Coordinates
-    staging_path_coordinates = fill_missing_location(staging_path_coordinates, staging_path_coordinates)
-    staging_path_coordinates = extract_coordinates(staging_path_coordinates, staging_path_coordinates)
-    staging_path_coordinates = remove_columns(staging_path_coordinates, staging_path_coordinates, "Location")
-    staging_path_coordinates = fill_coordinates_from_geojson(staging_path_coordinates, geojson_path=str(geo_coordinates_lookup_path), output_path=staging_path_coordinates)
+    staging_path_coordinates1 = fill_missing_location(staging_path_coordinates, staging_path_coordinates)
+    staging_path_coordinates2 = extract_coordinates(staging_path_coordinates1, staging_path_coordinates)
+    staging_path_coordinates3 = remove_columns(staging_path_coordinates2, staging_path_coordinates, "Location")
+    staging_path_coordinates4 = fill_coordinates_from_geojson(staging_path_coordinates3, geojson_path=str(geo_coordinates_lookup_path), output_path=staging_path_coordinates)
 
     # Date Recorded branch
-    staging_path_date_recorded = correct_wrong_years(staging_path_date_recorded, staging_path_date_recorded, date_column_name="Date Recorded")
-    staging_path_date_recorded = fix_date(staging_path_date_recorded, staging_path_date_recorded, date_column_name="Date Recorded")
+    staging_path_date_recorded1 = correct_wrong_years(staging_path_date_recorded, staging_path_date_recorded, date_column_name="Date Recorded")
+    staging_path_date_recorded2 = fix_date(staging_path_date_recorded1, staging_path_date_recorded, date_column_name="Date Recorded")
 
     # List Year branch
-    staging_path_list_year = year_to_jan_first(staging_path_list_year, staging_path_list_year, "List Year")
-    staging_path_list_year = rename_column(staging_path_list_year, staging_path_list_year, "List Year", "List Date")
+    staging_path_list_year1 = year_to_jan_first(staging_path_list_year, staging_path_list_year, "List Year")
+    staging_path_list_year2 = rename_column(staging_path_list_year1, staging_path_list_year, "List Year", "List Date")
 
     #Fix Property Type and Residential Type
-    staging_path_property_type = update_property_type(staging_path_property_type, staging_path_property_type, "Property Type", "Residential Type")
-    staging_path_property_type = remove_columns.override(task_id="remove_residential_type")(staging_path_property_type, staging_path_property_type, "Residential Type")
+    staging_path_property_type1 = update_property_type(staging_path_property_type, staging_path_property_type, "Property Type", "Residential Type")
+    staging_path_property_type2 = remove_columns.override(task_id="remove_residential_type")(staging_path_property_type1, staging_path_property_type, "Residential Type")
 
     #remove unneeded columns
-    staging_path = remove_columns.override(task_id="remove_unneeded_columns")(staging_path, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
+    remaining_columns1 = remove_columns.override(task_id="remove_unneeded_columns")(remaining_columns, staging_path, ["Non Use Code", "Assessor Remarks", "OPM remarks"])
 
     #merge all files together in the clean output file
-    output_path = merge_files([staging_path, staging_path_property_type, staging_path_list_year, staging_path_date_recorded, staging_path_coordinates],
+    output_path = merge_files([remaining_columns1, staging_path_property_type2, staging_path_list_year2, staging_path_date_recorded2, staging_path_coordinates4],
                output_path)
 
     result = generate_ml_map_layer_with_metrics(
