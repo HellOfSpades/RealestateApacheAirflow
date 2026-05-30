@@ -33,7 +33,7 @@ def clean_real_estate_pipeline():
         if not file_path.exists():
             raise FileNotFoundError(f"CSV file does not exist: {file_path}")
 
-        return pd.read_csv(file_path, dtype=dtype)
+        return pd.read_csv(file_path, dtype=dtype, thousands=',')
 
 
     @task
