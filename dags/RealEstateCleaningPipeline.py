@@ -33,7 +33,7 @@ def clean_real_estate_pipeline():
         if not file_path.exists():
             raise FileNotFoundError(f"CSV file does not exist: {file_path}")
 
-        return pd.read_csv(file_path, dtype=dtype, thousands=',')
+        return pd.read_csv(file_path, dtype=dtype)
 
 
     @task
@@ -199,15 +199,20 @@ def clean_real_estate_pipeline():
         dfs = [read_csv(p) for p in file_paths]
         df_merged = pd.concat(dfs, axis=1)
 
-        #df_merged = df_merged.loc[:, ~df_merged.columns.duplicated()]
+        # Cleanup the column formatting
+        for col in df_merged.columns:
+            if df_merged[col].dtype == 'object':
+                df_merged[col] = df_merged[col].astype(str).str.replace(
+                    r'(?<=\d),(?=\d)', '', regex=True
+                )
 
         # Delete staging files before writing output
-        # for path in file_paths:
-        #     try:
-        #         if os.path.exists(path):
-        #             os.remove(path)
-        #     except Exception as e:
-        #         print(f"Failed to delete {path}: {e}")
+        for path in file_paths:
+            try:
+                if os.path.exists(path):
+                    os.remove(path)
+            except Exception as e:
+                print(f"Failed to delete {path}: {e}")
 
         write_to_csv(df_merged, output_path)
         return output_path
